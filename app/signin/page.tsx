@@ -1,70 +1,86 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { clientLogin } from "@/services/clientAuthService"; // Using our client-side-only auth service
+import styles from "./login.module.css";
+import Link from "next/link";
 
-export default function SigninPage() {
-  const router = useRouter();
-  const { signIn } = useAuth();
-
+export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  // This useEffect ensures we're running on the client side
+  useEffect(() => {
+    // This will only execute in browser environment
+    console.log("Sign-in page mounted on client-side");
+  }, []);
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
     setError(null);
-    setLoading(true);
+    setIsLoading(true);
+
     try {
-      await signIn(email, password);
-      router.push("/"); // Redirect after successful login
+      // Using clientLogin from our new client-side-only auth service
+      const { accessToken, user } = await clientLogin(email, password);
+      // Token and user info are already stored in localStorage by clientLogin
+
+      console.log("Login successful", { user, accessToken });
+      // Redirect to a protected page or dashboard
+      // Example: router.push('/dashboard');
+      router.push("/"); // Redirect to home page for now
     } catch (err: any) {
-      setError(err.message || "Failed to sign in");
+      setError(err.message || "An unexpected error occurred.");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <main style={{ maxWidth: 400, margin: "auto", padding: 20 }}>
-      <h1>Sign In</h1>
-      <form onSubmit={handleSubmit} noValidate>
-        <label htmlFor="email">Email</label>
-        <input
-          type="email"
-          id="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-          disabled={loading}
-          style={{ width: "100%", padding: 8, marginBottom: 12 }}
-        />
-
-        <label htmlFor="password">Password</label>
-        <input
-          type="password"
-          id="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-          disabled={loading}
-          style={{ width: "100%", padding: 8, marginBottom: 12 }}
-        />
-
-        {error && <p style={{ color: "red", marginBottom: 12 }}>{error}</p>}
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{ padding: 10, width: "100%" }}
-        >
-          {loading ? "Signing in..." : "Sign In"}
-        </button>
-      </form>
-    </main>
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>Admin Login</h1>
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <div className={styles.inputGroup}>
+            <label htmlFor="email" className={styles.label}>
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className={styles.input}
+              disabled={isLoading}
+            />
+          </div>
+          <div className={styles.inputGroup}>
+            <label htmlFor="password" className={styles.label}>
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className={styles.input}
+              disabled={isLoading}
+            />
+          </div>
+          <button type="submit" className={styles.button} disabled={isLoading}>
+            {isLoading ? "Logging in..." : "Login"}
+          </button>
+          {error && <p className={styles.error}>{error}</p>}
+        </form>
+        <p className={styles.link}>
+          Don\'t have an account? <Link href="/register">Register here</Link>
+        </p>
+      </div>
+    </div>
   );
 }
