@@ -10,6 +10,14 @@ const API_BASE_URL = "http://localhost:3000/api";
 // Only initialize these variables in a client-side context
 let accessToken: string | null = null;
 
+// Initialize token from localStorage if we're on the client
+if (typeof window !== "undefined") {
+  const storedToken = localStorage.getItem("accessToken");
+  if (storedToken) {
+    accessToken = storedToken;
+  }
+}
+
 export const setAccessToken = (token: string) => {
   accessToken = token;
 };
