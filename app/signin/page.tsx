@@ -27,11 +27,15 @@ export default function LoginPage() {
       // Using clientLogin from our new client-side-only auth service
       const { accessToken, user } = await clientLogin(email, password);
       // Token and user info are already stored in localStorage by clientLogin
-
       console.log("Login successful", { user, accessToken });
-      // Redirect to a protected page or dashboard
-      // Example: router.push('/dashboard');
-      router.push("/"); // Redirect to home page for now
+
+      // Redirect based on user role
+      if (user.role === "RestaurantAdmin") {
+        router.push("/dashboard"); // RestaurantAdmin goes to dashboard
+      } else {
+        // For other roles, redirect to appropriate dashboard or home
+        router.push("/");
+      }
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.");
     } finally {

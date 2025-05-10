@@ -1,4 +1,4 @@
-import type { Restaurant } from "@/lib/types"
+import type { Restaurant } from "@/lib/types";
 
 export const mockRestaurant: Restaurant = {
   id: "1",
@@ -11,4 +11,4 @@ export const mockRestaurant: Restaurant = {
   cuisine: "American",
   approved: true,
   createdAt: new Date().toISOString(),
-}
+};

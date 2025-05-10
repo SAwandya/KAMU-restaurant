@@ -35,12 +35,20 @@ export const clientLogin = async (
 
     console.log("Login response received:", response.status);
     console.log("Response headers:", response.headers);
-
     if (response.data && response.data.accessToken) {
       setAccessToken(response.data.accessToken);
       // Store the token in localStorage to ensure client-side operation
       localStorage.setItem("accessToken", response.data.accessToken);
       localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      // Set cookies for middleware to use
+      const role = response.data.user.role;
+      document.cookie = `userRole=${role}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
+      document.cookie = `accessToken=${
+        response.data.accessToken
+      }; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
+
+      console.log("Set cookies for role:", role);
     } else {
       console.warn("No access token in response:", response.data);
     }

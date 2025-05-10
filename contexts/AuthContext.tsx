@@ -36,24 +36,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const valid = await validateToken();
-        if (valid) {
-          // You may want to fetch user info here from an API endpoint
-          // For demo, just set a dummy user or fetch from backend
-          setUser({
-            id: "1",
-            fullName: "User",
-            email: "user@example.com",
-            role: "customer",
-          });
+        // Try to get stored user from localStorage
+        const storedUser =
+          typeof window !== "undefined" ? localStorage.getItem("user") : null;
+
+        if (storedUser) {
+          // First set the user from localStorage to avoid flicker
+          setUser(JSON.parse(storedUser));
+
+          // Then validate the token
+          const valid = await validateToken();
+
+          if (!valid) {
+            console.log("Token validation failed, logging out");
+            // Only clear user if token is invalid
+            setUser(null);
+
+            // Clear localStorage if token is invalid
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("accessToken");
+              localStorage.removeItem("user");
+
+              // Clear cookies
+              document.cookie = "userRole=; path=/; max-age=0";
+              document.cookie = "accessToken=; path=/; max-age=0";
+            }
+          }
         } else {
           setUser(null);
         }
-      } catch {
+      } catch (error) {
+        console.error("Auth check error:", error);
         setUser(null);
       } finally {
         setLoading(false);
@@ -61,45 +77,73 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
     checkAuth();
   }, []);
-
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     try {
       const data = await login(email, password);
       setUser(data.user);
+
+      // Store user data in localStorage and cookies
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("accessToken", data.accessToken);
+
+        // Set cookies for middleware
+        document.cookie = `userRole=${data.user.role}; path=/; max-age=${
+          60 * 60 * 24 * 7
+        }`; // 7 days
+        document.cookie = `accessToken=${data.accessToken}; path=/; max-age=${
+          60 * 60 * 24 * 7
+        }`; // 7 days
+      }
+
       return data.user;
     } finally {
       setLoading(false);
     }
   };
-
   const signUpCustomer = async (data: RegisterCustomerData) => {
     setLoading(true);
     try {
       const user = await registerCustomer(data);
       setUser(user);
+
+      // No need to store in localStorage yet since they need to sign in first
+
       return user;
     } finally {
       setLoading(false);
     }
   };
-
   const signUpRider = async (data: RegisterRiderData) => {
     setLoading(true);
     try {
       const user = await registerRider(data);
       setUser(user);
+
+      // No need to store in localStorage yet since they need to sign in first
+
       return user;
     } finally {
       setLoading(false);
     }
   };
-
   const signOut = async () => {
     setLoading(true);
     try {
       await logout();
       setUser(null);
+
+      // Clear user data from localStorage and cookies
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("user");
+        localStorage.removeItem("accessToken");
+
+        // Clear cookies
+        document.cookie = "userRole=; path=/; max-age=0";
+        document.cookie = "accessToken=; path=/; max-age=0";
+      }
+
       router.push("/signin");
     } finally {
       setLoading(false);
