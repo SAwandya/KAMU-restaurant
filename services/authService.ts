@@ -1,4 +1,6 @@
 // services/authService.ts
+"use client"; // Force client-side only execution
+
 import api, { setAccessToken, clearAccessToken } from "./api";
 
 export interface User {
@@ -41,11 +43,20 @@ export const login = async (
   email: string,
   password: string
 ): Promise<LoginResponse> => {
-  const response = await api.post("/auth/login", { email, password });
-  if (response.data.accessToken) {
-    setAccessToken(response.data.accessToken);
+  console.log("Login request being made to:", "/auth/login");
+
+  try {
+    const response = await api.post("/auth/login", { email, password });
+    console.log("Login response received:", response.status);
+
+    if (response.data.accessToken) {
+      setAccessToken(response.data.accessToken);
+    }
+    return response.data;
+  } catch (error) {
+    console.error("Login error:", error);
+    throw error;
   }
-  return response.data;
 };
 
 export const logout = async (): Promise<void> => {

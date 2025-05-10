@@ -1,9 +1,13 @@
 // services/api.ts
+"use client"; // This ensures the file only runs on the client side
+
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:80/api";
+// Use relative URL to leverage Next.js API route proxying
+// This will use the current origin (e.g. http://localhost:3001)
+const API_BASE_URL = "http://localhost:3000/api";
 
+// Only initialize these variables in a client-side context
 let accessToken: string | null = null;
 
 export const setAccessToken = (token: string) => {
@@ -16,14 +20,15 @@ export const clearAccessToken = () => {
 
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,
+  // withCredentials must be false when using Next.js proxy to avoid CORS issues
+  withCredentials: false,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
 api.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config: any) => {
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
@@ -35,7 +40,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as AxiosRequestConfig & {
+    const originalRequest = error.config as any & {
       _retry?: boolean;
     };
 
